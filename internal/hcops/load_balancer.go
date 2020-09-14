@@ -15,6 +15,12 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	healthCheckInterval = 15 * time.Second
+	healthCheckRetries  = 3
+	healthCheckTimeout  = 10 * time.Second
+)
+
 // HCloudLoadBalancerClient defines the hcloud-go functions required by the
 // Load Balancer operations type.
 type HCloudLoadBalancerClient interface {
@@ -769,6 +775,15 @@ func (b *hclbServiceOptsBuilder) buildAddServiceOpts() (hcloud.LoadBalancerAddSe
 				TLS:         b.healthCheckOpts.httpOpts.TLS,
 			}
 		}
+	} else {
+		// add default tcp health check
+		opts.HealthCheck = &hcloud.LoadBalancerAddServiceOptsHealthCheck{
+			Protocol: hcloud.LoadBalancerServiceProtocolTCP,
+			Interval: hcloud.Duration(healthCheckInterval),
+			Port:     hcloud.Int(b.destinationPort),
+			Retries:  hcloud.Int(healthCheckRetries),
+			Timeout:  hcloud.Duration(healthCheckTimeout),
+		}
 	}
 
 	return opts, nil
@@ -812,6 +827,15 @@ func (b *hclbServiceOptsBuilder) buildUpdateServiceOpts() (hcloud.LoadBalancerUp
 				StatusCodes: b.healthCheckOpts.httpOpts.StatusCodes,
 				TLS:         b.healthCheckOpts.httpOpts.TLS,
 			}
+		}
+	} else {
+		// add default tcp health check
+		opts.HealthCheck = &hcloud.LoadBalancerUpdateServiceOptsHealthCheck{
+			Protocol: hcloud.LoadBalancerServiceProtocolTCP,
+			Interval: hcloud.Duration(healthCheckInterval),
+			Port:     hcloud.Int(b.destinationPort),
+			Retries:  hcloud.Int(healthCheckRetries),
+			Timeout:  hcloud.Duration(healthCheckTimeout),
 		}
 	}
 
